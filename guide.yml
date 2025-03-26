@@ -1,0 +1,24 @@
+fastapi_register/
+│── main.py           # File chính, chứa API endpoints của FastAPI.
+│── models.py         # Định nghĩa bảng User trong database (SQLAlchemy ORM).
+│── database.py       # Kết nối đến database SQLite và thiết lập session.
+│── schemas.py        # Định nghĩa Pydantic schemas (validate request/response).
+│── utils.py          # Các hàm tiện ích (hash password, xác thực, v.v.).
+│── crud.py         
+│── requirements.txt  # Danh sách các thư viện cần thiết để chạy dự án.
+option của schemas.py:
+orm_mode = True: Ánh xạ giữa ORM object và Pydantic model.
+
+from_attributes = True: Lấy giá trị trực tiếp từ các thuộc tính của ORM object.
+
+alias_generator: Tùy chỉnh cách tạo alias cho các trường.
+
+json_encoders: Tùy chỉnh cách mã hóa các kiểu dữ liệu đặc biệt thành JSON.
+
+min_anystr_length và max_anystr_length: Giới hạn độ dài của chuỗi.
+
+use_enum_values: Trả về giá trị của enum thay vì tên của enum.
+
+allow_population_by_field_name: Cho phép sử dụng tên trường thay vì alias khi ánh xạ.
+
+anystr_strip_whitespace: Loại bỏ khoảng trắng thừa trong chuỗi.

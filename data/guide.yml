@@ -1,0 +1,303 @@
+Hàm	Công dụng	Dùng khi nào?
+add(obj)	Thêm một object vào session	Khi muốn chèn dữ liệu mới nhưng chưa commit ngay
+add_all([obj1, obj2])	Thêm nhiều object vào session	Khi cần thêm nhiều dòng dữ liệu cùng lúc
+commit()	Lưu thay đổi vào DB (không rollback được nữa)	Khi muốn lưu thay đổi vĩnh viễn
+flush()	Gửi dữ liệu xuống DB nhưng chưa commit	Khi cần lấy ID tự động sinh nhưng vẫn muốn rollback nếu cần
+refresh(obj)	Cập nhật dữ liệu từ DB vào object	Khi muốn chắc chắn dữ liệu trong object là mới nhất từ DB
+rollback()	Hủy bỏ tất cả thay đổi chưa commit	Khi gặp lỗi hoặc muốn quay lại trạng thái trước đó
+delete(obj)	Đánh dấu object để xóa khỏi DB	Khi cần xóa dữ liệu khỏi DB
+close()	Đóng session, giải phóng tài nguyên	Khi hoàn thành công việc với session
+execute(stmt)	Chạy một câu SQL tùy chỉnh	Khi cần chạy câu lệnh SQL trực tiếp như SELECT, UPDATE, DELETE
+begin()	Mở transaction thủ công	Khi cần thực hiện nhiều thao tác và muốn đảm bảo tất cả cùng thành công hoặc rollback nếu có lỗi
+
+
+Đặc điểm	InnoDB	MyISAM
+Support Transaction	✅ Có (ACID)	❌ Không
+Locking	Row-level (khóa từng dòng)	Table-level (khóa cả bảng)
+Cache System	Buffer Pool	Key Cache
+Foreign Keys	✅ Hỗ trợ	❌ Không
+Rollback	✅ Có	❌ Không
+Tốc độ INSERT/UPDATE	🚀 Nhanh hơn với nhiều truy vấn đồng thời	⏳ Nhanh hơn khi chỉ có INSERT đơn giản
+
+
+Dữ liệu mới được ghi vào Buffer Pool (InnoDB) hoặc Key Cache (MyISAM).
+Nếu có AUTO_INCREMENT, giá trị tăng được quản lý trong InnoDB Internal Cache.
+Sau đó, dữ liệu sẽ flush xuống disk (Redo Log + Data Files).
+Nếu bật binlog, MySQL ghi log để đảm bảo khả năng khôi phục dữ liệu.
+
+Tối ưu INSERT: ✅ Sử dụng INSERT ... VALUES (...), (...), (...) để chèn nhiều dòng cùng lúc.
+✅ Tăng tốc bằng cách tắt tạm thời FOREIGN KEY (SET FOREIGN_KEY_CHECKS=0) khi chèn số lượng lớn.
+✅ Sử dụng LOAD DATA INFILE để nhập dữ liệu nhanh hơn
+
+Tối ưu DELETE: ✅ Dùng TRUNCATE TABLE nếu muốn xóa toàn bộ dữ liệu (nhanh hơn DELETE).
+✅ Sử dụng partitioning nếu bảng quá lớn để tránh ảnh hưởng hiệu suất toàn hệ thống.
+✅ Xóa theo batch: DELETE FROM table WHERE condition LIMIT 1000 để tránh lock bảng.
+
+🚀 3. Các loại Cache trong MySQL
+MySQL có nhiều cơ chế cache giúp tăng tốc độ xử lý:
+
+🔹 1. InnoDB Buffer Pool (Bộ nhớ chính của InnoDB)
+📌 Chứa:
+✅ Dữ liệu (pages) từ bảng & index.
+✅ Redo Logs để lưu thay đổi trước khi ghi vào disk.
+📌 Cách tối ưu:
+✅ Tăng innodb_buffer_pool_size để giữ nhiều dữ liệu hơn trong RAM.
+✅ Tăng innodb_log_buffer_size để giảm ghi log đĩa.
+
+📌 Chứa:
+✅ Kết quả truy vấn SQL để tránh chạy lại query giống nhau.
+📌 Cách tối ưu:
+✅ Nếu dùng MySQL < 8, hãy bật query_cache_size nếu dữ liệu ít thay đổi.
+
+🔹 3. Redo Log Cache (Chứa log của giao dịch trước khi ghi vào file)
+📌 Cách hoạt động:
+✅ Khi INSERT/UPDATE/DELETE, thay đổi được ghi vào Redo Log Cache trước.
+✅ Redo Log sau đó được flush xuống disk để đảm bảo không mất dữ liệu.
+📌 Tối ưu:
+✅ Tăng innodb_log_file_size để giảm số lần ghi đĩa.
+
+🔹 4. Undo Log Cache (Lưu dữ liệu cũ để hỗ trợ rollback)
+📌 Khi nào dùng?
+✅ Khi có giao dịch (BEGIN TRANSACTION) và cần rollback.
+📌 Tối ưu:
+✅ Tăng innodb_undo_log_truncate để tránh log chiếm quá nhiều dung lượng.
+
+
+
+
+oại Cache	Chứa gì?	Hoạt động khi nào?	Cách tối ưu
+InnoDB Buffer Pool	Dữ liệu từ bảng, chỉ mục (index), redo log	Khi SELECT, INSERT, UPDATE, DELETE	Tăng innodb_buffer_pool_size để giữ nhiều dữ liệu hơn trong RAM
+Query Cache (đã bị loại bỏ từ MySQL 8)	Kết quả truy vấn SQL	Khi có SELECT lặp lại	Không còn dùng trong MySQL 8, thay bằng ProxySQL, Redis Cache
+Redo Log Cache	Ghi nhận thay đổi trước khi flush xuống disk	Khi có transaction (INSERT, UPDATE, DELETE)	Tăng innodb_log_buffer_size để giảm số lần ghi đĩa
+Undo Log Cache	Dữ liệu cũ để rollback	Khi chạy ROLLBACK hoặc có transaction chưa commit	Tăng innodb_undo_log_truncate để tránh log chiếm quá nhiều dung lượng
+Key Cache (MyISAM)	Chỉ mục (index) của MyISAM	Khi SELECT trên bảng MyISAM	Tăng key_buffer_size nếu dùng MyISAM
+Table Cache	Metadata của bảng đang mở	Khi mở nhiều bảng cùng lúc	Tăng table_open_cache nếu nhiều kết nối đồng thời
+Thread Cache	Kết nối cũ để tránh tạo mới thread	Khi có nhiều kết nối lặp lại	Tăng thread_cache_size nếu hệ thống có nhiều kết nối
+Binary Log Cache	Log thay đổi của transaction (dùng cho replication)	Khi có replication	Tăng binlog_cache_size nếu hệ thống replica lớn
+Adaptive Hash Index (AHI)	Index cache để tăng tốc độ tìm kiếm	Khi có truy vấn sử dụng index nhiều lần	Tự động tối ưu, không cần chỉnh thủ công
+Result Set Cache (MySQL 8)	Kết quả truy vấn SQL để tránh tính toán lại	Khi có SELECT trên dữ liệu ít thay đổi	Bật resultset_cache_size trong MySQL 8
+
+
+📌 Ghi chú quan trọng
+✅ InnoDB Buffer Pool là quan trọng nhất nếu dùng InnoDB.
+✅ Query Cache đã bị loại bỏ từ MySQL 8, nên thay thế bằng Redis hoặc ProxySQL.
+✅ Redo Log Cache và Undo Log Cache giúp MySQL xử lý transaction nhanh hơn.
+✅ Table Cache & Thread Cache giúp tăng tốc độ mở bảng và quản lý kết nối.
+
+
+
+🏗 1. Cấu hình mặc định của các loại cache trong MySQL
+Cache	Mặc định (MySQL 8.x)	Ghi chú
+InnoDB Buffer Pool	128MB (innodb_buffer_pool_size)	Tăng để tối ưu hiệu suất đọc/ghi
+Redo Log Cache	16MB (innodb_log_buffer_size)	Giảm ghi đĩa nếu giao dịch lớn
+Undo Log Cache	16MB (innodb_undo_log_truncate)	Hỗ trợ rollback
+Table Cache	2000 (table_open_cache)	Tăng nếu nhiều bảng mở cùng lúc
+Thread Cache	9 (thread_cache_size)	Tăng nếu có nhiều kết nối đồng thời
+Binary Log Cache	32KB (binlog_cache_size)	Dùng khi có replication
+Result Set Cache (MySQL 8.x)	0 (resultset_cache_size)	Mặc định tắt, có thể bật
+
+
+
+
+📂 2. Cách đọc file trong MySQL theo page size (4KB, 8KB, 16KB, 64KB)
+MySQL dùng InnoDB Buffer Pool để đọc file thành từng trang (page).
+Kích thước mặc định của page InnoDB là 16KB, nhưng có thể đổi thành 4KB, 8KB, 32KB, 64KB.
+📌 Lệnh kiểm tra page size hiện tại:
+
+sql
+Copy
+Edit
+SELECT variable_value FROM information_schema.global_variables 
+WHERE variable_name = 'innodb_page_size';
+
+
+📌 Tạo tablespace với kích thước page khác (chỉ khi khởi tạo database):
+
+sql
+Copy
+Edit
+CREATE TABLESPACE my_space 
+ADD DATAFILE 'my_space.ibd' 
+FILE_BLOCK_SIZE = 8K;
+
+
+
+⚙️ 3. Cấu hình thay đổi size của các loại cache
+Các giá trị này được thay đổi trong MySQL config file (my.cnf hoặc my.ini) hoặc bằng SQL trực tiếp.
+
+🔥 Thay đổi bằng SQL (tạm thời, không lưu khi restart)
+sql
+Copy
+Edit
+SET GLOBAL innodb_buffer_pool_size = 1 * 1024 * 1024 * 1024;  -- 1GB
+SET GLOBAL innodb_log_buffer_size = 64 * 1024 * 1024;         -- 64MB
+SET GLOBAL table_open_cache = 5000;                           -- 5000 table cache
+SET GLOBAL thread_cache_size = 20;                            -- 20 threads
+SET GLOBAL binlog_cache_size = 128 * 1024;                    -- 128KB
+SET GLOBAL resultset_cache_size = 64 * 1024 * 1024;           -- 64MB
+
+
+
+🔧 Thay đổi trong my.cnf (lưu vĩnh viễn)
+Mở file /etc/mysql/my.cnf hoặc C:\ProgramData\MySQL\MySQL Server 8.0\my.ini và thêm:
+
+ini
+Copy
+Edit
+[mysqld]
+innodb_buffer_pool_size = 1G
+innodb_log_buffer_size = 64M
+table_open_cache = 5000
+thread_cache_size = 20
+binlog_cache_size = 128K
+resultset_cache_size = 64M
+
+
+Sau đó restart MySQL:
+
+bash
+Copy
+Edit
+systemctl restart mysql   Trên Linux
+net stop mysql && net start mysql   Trên Windows
+
+
+
+📌 Lưu ý quan trọng khi tối ưu cache
+✅ InnoDB Buffer Pool nên chiếm 50-80% RAM nếu database lớn.
+✅ Redo Log Cache nên tăng nếu có giao dịch lớn để giảm ghi đĩa.
+✅ Binary Log Cache nên tối ưu nếu có replication.
+✅ Page Size thường là 16KB và không thể thay đổi sau khi tạo database.
+
+tính toán để 
+innodb_buffer_pool_size ≈ (Total RAM * 0.5 đến 0.8) - (dung lượng các process khác)
+Server có 16GB RAM.
+Chạy MySQL + Web Server + Cache khác (Redis, Kafka, v.v.).
+Web Server chiếm khoảng 4GB, Redis/Kafka chiếm 2GB.
+Tối ưu innodb_buffer_pool_size = (16GB - 6GB) * 0.8 ≈ 8GB.
+SHOW ENGINE INNODB STATUS \G;
+SELECT variable_value FROM information_schema.global_variables 
+WHERE variable_name = 'innodb_buffer_pool_size';
+[mysqld]
+innodb_buffer_pool_size = 8G
+innodb_buffer_pool_instances = 8    Chia nhỏ buffer pool nếu lớn hơn 1GB
+(B) Tính toán innodb_log_buffer_size
+innodb_log_buffer_size ≈ (50% đến 100% kích thước giao dịch lớn nhất)
+SHOW GLOBAL STATUS LIKE 'Innodb_os_log_written';
+[mysqld]
+innodb_log_buffer_size = 128M
+(C) Tính toán table_open_cache
+table_open_cache = (Total Tables * Active Connections) / 2
+Ví dụ:
+Nếu MySQL có 5000 bảng, 100 kết nối đồng thời → đặt table_open_cache ≈ 2500.
+SHOW STATUS LIKE 'Open_tables';
+SHOW VARIABLES LIKE 'table_open_cache';
+[mysqld]
+table_open_cache = 2500
+
+ (D) Tính toán binlog_cache_size (nếu dùng replication)
+ binlog_cache_size = (Tổng số transactions concurrent * Trung bình mỗi transaction)
+Ví dụ:
+Nếu có 100 transactions/s với mỗi transaction trung bình 512KB → đặt binlog_cache_size = 50MB.
+SHOW GLOBAL STATUS LIKE 'Binlog_cache_use';
+[mysqld]
+binlog_cache_size = 50M
+
+✅ (A) Theo dõi lượng bộ nhớ MySQL đang dùng
+Chạy lệnh kiểm tra bộ nhớ RAM MySQL đang sử dụng:
+
+sql
+Copy
+Edit
+SHOW ENGINE INNODB STATUS \G;
+SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_pages_free';
+SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_read_requests';
+
+mysql -e "SELECT @@innodb_buffer_pool_size;"
+
+✅ (B) Bật Performance Schema để giám sát cache
+Bật Performance Schema để kiểm tra cache có bị tràn không:
+
+sql
+Copy
+Edit
+SELECT * FROM performance_schema.memory_summary_global_by_event_name;
+
+
+🔥 Tóm lại – Cách tránh tràn cache hiệu quả
+✅ Ưu tiên RAM cho innodb_buffer_pool_size (50-80% tổng RAM)
+✅ Giữ log trong RAM (innodb_log_buffer_size) để giảm ghi disk
+✅ Hạn chế đọc disk quá nhiều bằng cách tối ưu table_open_cache
+✅ Nếu dùng replication, tăng binlog_cache_size
+✅ Luôn giám sát bằng SHOW ENGINE INNODB STATUS & Performance Schema
+
+Cấu hình này sẽ giúp MySQL chạy mượt hơn, ít ghi disk hơn và tránh cache bị tràn 🚀.
+
+SET GLOBAL innodb_buffer_pool_size = 8G;
+SET GLOBAL innodb_log_buffer_size = 128M;
+SET GLOBAL binlog_cache_size = 16M;
+
+
+✅ innodb_log_buffer_size được giải phóng khi:
+
+Transaction COMMIT → Log buffer được flush xuống disk.
+Log buffer gần đầy → MySQL tự động flush trước khi đầy.
+Mỗi giây nếu innodb_flush_log_at_trx_commit = 0/2 → MySQL flush tự động.
+Log file bị đầy (checkpointing) → MySQL bắt buộc flush log buffer để tránh nghẽn.
+
+
+SHOW GLOBAL STATUS LIKE 'innodb_log_waits';
+innodb_log_waits > 0, nghĩa là MySQL phải chờ ghi log xuống disk do
+SHOW GLOBAL STATUS LIKE 'innodb_log_waits';
+
+
+SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_read%';
+ Ý nghĩa các giá trị:
+
+Innodb_buffer_pool_read_requests = Số lần MySQL đọc từ cache.
+Innodb_buffer_pool_reads = Số lần MySQL phải đọc từ disk.
+
+
+Tính tỷ lệ cache hit:
+SELECT (1 - (Innodb_buffer_pool_reads / Innodb_buffer_pool_read_requests)) * 100 AS cache_hit_rate
+FROM (SELECT VARIABLE_VALUE AS Innodb_buffer_pool_reads 
+      FROM performance_schema.global_status WHERE VARIABLE_NAME = 'Innodb_buffer_pool_reads') AS A,
+     (SELECT VARIABLE_VALUE AS Innodb_buffer_pool_read_requests
+      FROM performance_schema.global_status WHERE VARIABLE_NAME = 'Innodb_buffer_pool_read_requests') AS B;
+Nếu cache hit < 90% → Buffer Pool quá nhỏ, cần tăng!
+SET GLOBAL innodb_buffer_pool_size = 16G;
+
+ Kiểm tra binlog_cache_size có bị đầy không (đối với replication)?
+ SHOW GLOBAL STATUS LIKE 'Binlog_cache_disk_use';
+ Nếu Binlog_cache_disk_use > 0, nghĩa là binlog_cache_size không đủ, MySQL phải ghi ra file tạm trên disk
+ SET GLOBAL binlog_cache_size = 32M;
+
+Kiểm tra xem có transaction nào phải flush xuống disk do thiếu cache không?
+SHOW GLOBAL STATUS LIKE 'innodb_log_fsyncs';
+
+Nếu số này cao, nghĩa là quá nhiều transaction đang ghi log xuống disk thay vì RAM.
+🛠 Giải pháp:
+
+Tăng innodb_log_buffer_size nếu transaction quá lớn.
+Kiểm tra lại bằng SHOW GLOBAL STATUS LIKE 'innodb_log_fsyncs';
+
+✅ Kiểm tra log buffer đầy → SHOW GLOBAL STATUS LIKE 'innodb_log_waits';
+✅ Kiểm tra cache hit của Buffer Pool → SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_read%';
+✅ Kiểm tra binlog cache có bị đầy không → SHOW GLOBAL STATUS LIKE 'Binlog_cache_disk_use';
+✅ Kiểm tra số lần transaction flush xuống disk → SHOW GLOBAL STATUS LIKE 'innodb_log_fsyncs';
+
+📌 Nếu thấy cache quá tải, cần tăng kích thước bộ nhớ để tránh đọc/ghi xuống disk gây chậm! 🚀
+
+
+
+
+
+
+
+
+
+
+
+
+
+

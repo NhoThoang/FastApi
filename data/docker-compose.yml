@@ -1,0 +1,28 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: example_password  # Mật khẩu root
+      MYSQL_DATABASE: flask  # Tên cơ sở dữ liệu bạn muốn tạo
+      MYSQL_USER: flask  # Tên người dùng
+      MYSQL_PASSWORD: km@022071994  # Mật khẩu người dùng
+      MYSQL_INITDB_SKIP_TZINFO: 1  # Bỏ qua thông tin múi giờ
+    ports:
+      - "3307:3306"  # Mở cổng 3306 ra ngoài để kết nối
+    volumes:
+      - ./mysql.cnf:/etc/mysql/conf.d/mysqld.cnf  # Mount file cấu hình MySQL vào container 
+    networks:
+      - flask-network
+    command: --default-authentication-plugin=mysql_native_password  # Nếu cần thiết
+
+networks:
+  flask-network:
+    driver: bridge
+
+
+# [mysqld]
+# innodb_buffer_pool_size = 20G
+# innodb_log_buffer_size = 128M
+# binlog_cache_size = 64M
+# table_open_cache = 400

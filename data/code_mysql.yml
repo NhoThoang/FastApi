@@ -1,0 +1,89 @@
+
+CREATE USER 'root'@'%' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
+FLUSH PRIVILEGES;
+
+
+CREATE USER "flashsale"@"%" IDENTIFIED BY "password";
+GRANT ALL PRIVILEGES ON *.* TO "flask"@"%";
+GRANT ALL PRIVILEGES ON database_name.* TO 'username'@'host' IDENTIFIED BY 'password';
+
+FLUSH PRIVILEGES;
+show user:
+select user,host from mysql.user;
+nén volume 
+docker run --rm -v mysql_data:/data -v $(pwd):/backup busybox tar czf /backup/mysql_data.tar.gz -C /data .
+
+scp mysql_data.tar.gz user@remote_host:/path/to/destination
+docker volume create mysql_data
+docker run --rm -v mysql_data:/data -v $(pwd):/backup busybox tar xzf /backup/mysql_data.tar.gz -C /data
+
+Sửa file config MySQL (/etc/mysql/my.cnf hoặc /etc/my.cnf), thêm hoặc chỉnh các thông số: 50gb 1 tỉ dong chỉ đọc 
+[mysqld]
+read_only = 1  # Chỉ cho phép SELECT, chặn INSERT/UPDATE/DELETE
+innodb_buffer_pool_size = 16G  # Tùy RAM, thường 50-80% RAM tổng
+innodb_log_buffer_size = 256M  # Tăng để giảm ghi log
+query_cache_size = 0  # Nếu MySQL 8.x thì bỏ vì đã deprecated
+key_buffer_size = 512M  # Dành cho MyISAM, nếu dùng InnoDB thì không cần
+
+
+innodb_flush_log_at_trx_commit = 2  # Giảm ghi disk, phù hợp vì chỉ đọc
+sync_binlog = 0  # Tắt ghi binlog khi không cần replication
+innodb_read_io_threads = 8  # Tăng số luồng đọc I/O
+innodb_flush_method = O_DIRECT  # Giảm cache của OS
+tmp_table_size = 512M  # Tăng cho bảng tạm khi SELECT lớn
+max_heap_table_size = 512M
+read_buffer_size = 2M  # Tăng cho scan toàn bộ bảng
+read_rnd_buffer_size = 4M  # Tăng cho index scan
+
+max_connections = 500  # Số connection tối đa, tùy theo tải
+thread_cache_size = 64  # Tái sử dụng thread để giảm tạo thread mới
+table_open_cache = 20000  # Số bảng mở cùng lúc, nên cao hơn số bảng tổng
+open_files_limit = 50000  # Số file tối đa MySQL có thể mở
+
+
+cả đọc và ghi 
+[mysqld]
+innodb_buffer_pool_size = 16G  # Tùy RAM, thường 50-80% RAM tổng
+innodb_buffer_pool_instances = 8  # Chia nhỏ buffer pool để tăng hiệu suất
+innodb_log_file_size = 1G  # Tăng log file để tránh ghi quá nhiều
+innodb_log_buffer_size = 256M  # Tăng bộ nhớ cho log
+innodb_flush_log_at_trx_commit = 1  # Đảm bảo an toàn dữ liệu
+innodb_flush_method = O_DIRECT  # Tránh cache của OS để tăng tốc
+innodb_read_io_threads = 8  # Tăng luồng đọc
+innodb_write_io_threads = 8  # Tăng luồng ghi
+innodb_io_capacity = 1000  # Giới hạn số IOPS để tránh quá tải
+
+query_cache_size = 0  # Nếu dùng MySQL 8.x thì tắt vì đã deprecated
+tmp_table_size = 512M  # Tăng cho bảng tạm khi SELECT lớn
+max_heap_table_size = 512M
+read_buffer_size = 2M  # Tăng cho scan toàn bộ bảng
+read_rnd_buffer_size = 4M  # Tăng cho index scan
+join_buffer_size = 8M  # Tăng buffer cho JOIN
+
+max_connections = 500  # Số connection tối đa
+thread_cache_size = 64  # Dùng lại thread để giảm chi phí tạo mới
+table_open_cache = 20000  # Số bảng mở cùng lúc
+open_files_limit = 50000  # Giới hạn số file MySQL có thể mở
+
+
+hông số	Default (MySQL 8.x)	Cấu hình tối ưu của bạn	Ảnh hưởng
+innodb_buffer_pool_size	~128MB	16G	Tăng đáng kể bộ nhớ cache dữ liệu, giảm I/O disk.
+innodb_buffer_pool_instances	1	8	Cải thiện hiệu suất khi nhiều thread truy cập.
+innodb_log_file_size	128MB	1G	Tăng dung lượng log để tránh ghi log quá thường xuyên.
+innodb_log_buffer_size	16MB	256M	Giảm số lần ghi log xuống disk, tối ưu cho giao dịch lớn.
+innodb_flush_log_at_trx_commit	1	1 (giữ nguyên)	Bảo đảm dữ liệu an toàn nhưng có thể chậm hơn so với 2.
+innodb_flush_method	fsync	O_DIRECT	Tránh cache của OS, tối ưu ghi trực tiếp vào disk.
+innodb_read_io_threads	4	8	Tăng số luồng đọc song song để xử lý query nhanh hơn.
+innodb_write_io_threads	4	8	Tăng luồng ghi, giảm bottleneck khi ghi dữ liệu.
+innodb_io_capacity	200	1000	Tăng giới hạn IOPS để tận dụng SSD hoặc RAID tốt hơn.
+query_cache_size	0 (đã deprecated)	0	Không ảnh hưởng vì MySQL 8.x không còn dùng query cache.
+tmp_table_size	16MB	512M	Giảm tạo bảng tạm trên disk khi SELECT dữ liệu lớn.
+max_heap_table_size	16MB	512M	Tăng bộ nhớ tối đa cho bảng HEAP (memory table).
+read_buffer_size	128KB	2M	Tăng tốc độ đọc tuần tự khi không có index.
+read_rnd_buffer_size	256KB	4M	Giúp đọc dữ liệu nhanh hơn khi có ORDER BY.
+join_buffer_size	256KB	8M	Tăng hiệu suất JOIN khi thiếu index.
+max_connections	151	500	Hỗ trợ nhiều kết nối đồng thời hơn.
+thread_cache_size	9	64	Giảm chi phí tạo thread mới, cải thiện hiệu suất.
+table_open_cache	2000	20000	Giảm tốn thời gian mở bảng khi có nhiều bảng.
+open_files_limit	5000	50000	Tăng giới hạn file mở, tránh lỗi "Too many open files".

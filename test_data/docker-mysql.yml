@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql_container
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: km123456789
+      MYSQL_DATABASE: fastapi
+      MYSQL_USER: thoang  
+      MYSQL_PASSWORD: km123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - my_network
+
+volumes:
+  mysql_data:
+
+networks:
+  my_network:

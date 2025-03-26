@@ -1,0 +1,179 @@
+## Mặc định của các loại cache trong MySQL
+
+| **Tham số**                  | **Mô tả** | **Giá trị mặc định** |
+|----------------------------------|------------|-----------------|
+| `innodb_buffer_pool_size`       | Kích thước bộ nhớ cache dành cho dữ liệu và index của InnoDB | 128M |
+| `innodb_log_buffer_size`        | Kích thước bộ nhớ cache dành cho transaction log | 16M |
+| `binlog_cache_size`             | Kích thước bộ nhớ cache dành cho binlog khi replication | 32K |
+| `query_cache_size`              | Kích thước bộ nhớ cache dành cho kết quả truy vấn (MySQL < 8.0) | 1M |
+| `table_open_cache`              | Số bảng tối đa được mở cùng lúc | 2000 |
+| `thread_cache_size`             | Số lượng thread được cache để tái sử dụng | Tự động |
+| `innodb_flush_log_at_trx_commit`| Cách ghi log của InnoDB | 1 (Flush ngay khi commit) |
+| `innodb_page_size`              | Kích thước trang dữ liệu trong InnoDB | 16K |
+| `max_binlog_cache_size`         | Kích thước tối đa của binlog cache | 4G |
+
+### Cách thay đổi các tham số cache
+
+1. **Thay đổi tạm thời (chỉ áp dụng cho session hiện tại):**
+```sql
+SET GLOBAL innodb_buffer_pool_size = 8G;
+SET GLOBAL innodb_log_buffer_size = 128M;
+SET GLOBAL binlog_cache_size = 16M;
+```
+
+2. **Thay đổi vĩnh viễn (sau khi restart MySQL vẫn giữ nguyên):**
+- Sửa file cấu hình `/etc/mysql/my.cnf` hoặc `/etc/my.cnf`:
+```ini
+[mysqld]
+innodb_buffer_pool_size = 8G
+innodb_log_buffer_size = 128M
+binlog_cache_size = 16M
+```
+- Restart MySQL để áp dụng:
+```bash
+sudo systemctl restart mysql
+```
+
+📌 TỔNG HỢP KIẾN THỨC MYSQL - TỐI ƯU HIỆU SUẤT & CACHE
+1️⃣ Kiến trúc của MySQL & Các loại Cache
+🔹 Cấu trúc MySQL & Quá trình đọc/ghi dữ liệu
+Khi INSERT/UPDATE/DELETE dữ liệu:
+
+Ghi vào InnoDB Buffer Pool (innodb_buffer_pool_size)
+Ghi vào InnoDB Log Buffer (innodb_log_buffer_size)
+Ghi vào Binary Log Cache (binlog_cache_size, nếu dùng replication)
+Sau đó mới flush xuống disk khi commit hoặc cache đầy.
+Khi SELECT dữ liệu:
+
+MySQL kiểm tra InnoDB Buffer Pool trước.
+Nếu không có, MySQL đọc từ disk → lưu vào Buffer Pool để cache.
+2️⃣ Các loại cache quan trọng
+Loại Cache	Chức năng
+innodb_buffer_pool_size	Cache dữ liệu & index của InnoDB.
+innodb_log_buffer_size	Lưu transaction log trước khi flush xuống disk.
+binlog_cache_size	Lưu binlog của transaction trước khi ghi vào binlog file (Replication).
+query_cache_size	Cache kết quả query để tăng tốc độ SELECT (deprecated từ MySQL 8.0).
+table_open_cache	Cache table đã mở để tránh mở lại từ disk mỗi lần query.
+thread_cache_size	Cache thread kết nối để tránh tạo mới mỗi lần request đến.
+3️⃣ Cách kiểm tra MySQL có bị quá tải không?
+✅ Kiểm tra log buffer có bị đầy không (innodb_log_buffer_size)?
+sql
+Copy
+Edit
+SHOW GLOBAL STATUS LIKE 'innodb_log_waits';
+➡️ Nếu innodb_log_waits > 0 → Log Buffer quá nhỏ, cần tăng kích thước.
+
+🛠 Giải pháp:
+
+sql
+Copy
+Edit
+SET GLOBAL innodb_log_buffer_size = 256M;
+✅ Kiểm tra Buffer Pool có bị đầy không (innodb_buffer_pool_size)?
+sql
+Copy
+Edit
+SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_read%';
+📌 Tính cache hit rate:
+
+sql
+Copy
+Edit
+SELECT (1 - (Innodb_buffer_pool_reads / Innodb_buffer_pool_read_requests)) * 100 AS cache_hit_rate
+FROM (SELECT VARIABLE_VALUE AS Innodb_buffer_pool_reads 
+      FROM performance_schema.global_status WHERE VARIABLE_NAME = 'Innodb_buffer_pool_reads') AS A,
+     (SELECT VARIABLE_VALUE AS Innodb_buffer_pool_read_requests
+      FROM performance_schema.global_status WHERE VARIABLE_NAME = 'Innodb_buffer_pool_read_requests') AS B;
+➡️ Nếu cache hit < 90%, MySQL đọc từ disk quá nhiều → Cần tăng Buffer Pool.
+
+🛠 Giải pháp:
+
+sql
+Copy
+Edit
+SET GLOBAL innodb_buffer_pool_size = 16G;
+✅ Kiểm tra binlog cache có bị đầy không (binlog_cache_size)?
+sql
+Copy
+Edit
+SHOW GLOBAL STATUS LIKE 'Binlog_cache_disk_use';
+➡️ Nếu Binlog_cache_disk_use > 0 → MySQL dùng file tạm trên disk thay vì RAM.
+
+🛠 Giải pháp:
+
+sql
+Copy
+Edit
+SET GLOBAL binlog_cache_size = 32M;
+4️⃣ Khi nào MySQL flush xuống disk?
+Log Buffer (innodb_log_buffer_size) được flush xuống disk khi:
+
+Transaction commit.
+Buffer đầy.
+Thời gian tự động flush (1 giây/lần).
+Buffer Pool (innodb_buffer_pool_size) được flush khi:
+
+Máy chủ cần RAM cho dữ liệu mới.
+MySQL tự động background flush.
+Server shutdown.
+5️⃣ Tối ưu hệ thống khi có nhiều transaction
+➡️ Khi có nhiều transaction cùng lúc, cần tăng các giá trị:
+🔹 Tăng innodb_log_buffer_size để tránh flush xuống disk quá sớm.
+🔹 Tăng innodb_buffer_pool_size để giữ nhiều dữ liệu hơn trong RAM.
+🔹 Tăng binlog_cache_size để tránh ghi binlog xuống disk.
+
+🔥 Tóm tắt cách tối ưu MySQL
+✅ Tăng cache hợp lý (innodb_buffer_pool_size, innodb_log_buffer_size, binlog_cache_size).
+✅ Kiểm tra cache hit rate để đảm bảo MySQL đọc từ RAM thay vì disk.
+✅ Tăng log buffer nếu có nhiều transaction lớn (innodb_log_buffer_size).
+✅ Giảm ghi xuống disk bằng cách tối ưu rollback & commit hợp lý.
+
+📌 Nếu hệ thống chậm, kiểm tra bằng các lệnh:
+
+sql
+Copy
+Edit
+SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_reads';
+SHOW GLOBAL STATUS LIKE 'Innodb_log_waits';
+SHOW GLOBAL STATUS LIKE 'Binlog_cache_disk_use';
+SHOW GLOBAL STATUS LIKE 'innodb_log_fsyncs';
+🚀 Tối ưu đúng cách sẽ giúp MySQL chạy nhanh hơn & ổn định hơn!
+
+
+Dựa vào Threads_created và Connections
+
+Chạy lệnh sau để xem tổng số luồng đã tạo và số kết nối:
+sql
+Copy
+Edit
+SHOW GLOBAL STATUS LIKE 'Threads_created';
+SHOW GLOBAL STATUS LIKE 'Connections';
+Nếu Threads_created quá cao so với Connections, có nghĩa là MySQL đang phải tạo quá nhiều thread mới, cần tăng thread_cache_size.
+Dựa vào hiệu suất thực tế
+
+Nếu có nhiều kết nối đồng thời (>100 connections) và Threads_created vẫn tăng nhanh, hãy nâng thread_cache_size.
+
+Server nhỏ (<50 connections): thread_cache_size = 8
+Server vừa (50-200 connections): thread_cache_size = 16
+Server lớn (>200 connections): thread_cache_size = 32 hoặc cao hơn
+
+SHOW VARIABLES LIKE 'binlog_cache_size';
+🔹 Giá trị đề xuất:
+
+Loại hệ thống	Giá trị hợp lý
+Hệ thống nhỏ (<100 transactions/giây)	1MB - 4MB
+Hệ thống trung bình (100 - 1000 transactions/giây)	8MB - 32MB
+Hệ thống lớn (>1000 transactions/giây)	64MB - 128MB
+
+Cách kiểm tra giá trị hiện tại:
+
+sql
+Copy
+Edit
+SHOW VARIABLES LIKE 'innodb_log_buffer_size';
+🔹 Giá trị đề xuất:
+
+RAM	Giá trị hợp lý
+< 4GB	16MB
+4GB - 16GB	64MB - 128MB
+> 16GB	256MB hoặc hơn
