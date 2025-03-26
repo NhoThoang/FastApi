@@ -22,3 +22,24 @@ use_enum_values: Trả về giá trị của enum thay vì tên của enum.
 allow_population_by_field_name: Cho phép sử dụng tên trường thay vì alias khi ánh xạ.
 
 anystr_strip_whitespace: Loại bỏ khoảng trắng thừa trong chuỗi.
+################Pydantic
+from_attributes = True	Cho phép tạo Pydantic model từ SQLAlchemy ORM object.
+populate_by_name = True	Cho phép dùng alias khi nhận dữ liệu.
+arbitrary_types_allowed = True	Cho phép sử dụng các kiểu dữ liệu không phải Pydantic.
+validate_default = True	Kiểm tra giá trị mặc định của field khi khởi tạo object.
+json_schema_extra = {...}	Tùy chỉnh schema OpenAPI khi tạo tài liệu API.
+strict = True	Bật chế độ kiểm tra kiểu dữ liệu nghiêm ngặt.
+ser_json_timedelta = "float"	Xác định cách serialize timedelta (float, string, int).
+ser_json_bytes = "utf8"	Chỉ định cách mã hóa dữ liệu kiểu bytes.
+ Tóm tắt
+from_attributes = True: Dùng với SQLAlchemy ORM.
+
+populate_by_name = True: Hỗ trợ alias trong JSON.
+
+arbitrary_types_allowed = True: Hỗ trợ kiểu dữ liệu tùy chỉnh.
+
+validate_default = True: Kiểm tra giá trị mặc định.
+
+json_schema_extra: Tùy chỉnh OpenAPI schema.
+
+strict = True: Bật kiểm tra kiểu dữ liệu nghiêm ngặt.

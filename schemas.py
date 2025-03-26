@@ -14,34 +14,12 @@ class UserBase(BaseModel):
                 detail="Username must be at least 3 characters long"
             )
         return v
-class InfoUser(BaseModel):
-    username: str
-class update_information(BaseModel):
-    username: str
-    phone: str
-    address: str
-    
-    @validator('phone')
-    def validate_phone(cls, v):
-        # Kiểm tra định dạng số điện thoại
-        if not re.match(r'^\+?[0-9]{10,15}$', v):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid phone number format"
-            )
-        return v
-    
-    @validator('address')
-    def validate_address(cls, v):
-        if len(v.strip()) < 5:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Address must be at least 5 characters long"
-            )
-        return v
 
 class UserCreate(UserBase):
     password: str
+    # class Config:
+    #     from_attributes = True
+        
 
     # Kiểm tra mật khẩu có đủ các yêu cầu về độ mạnh
     @validator('password')
@@ -87,7 +65,40 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class format_post_information(BaseModel):
+    username: str
+class format_response_information(BaseModel):
+    id: int
+    phone: str
+    address: str
+    avata_path: str
+    background_path: str
+class update_information_user(BaseModel):
+    username: str
+    phone: str
+    address: str
+    
+    # @validator('phone')
+    # def validate_phone(cls, v):
+    #     # Kiểm tra định dạng số điện thoại
+    #     if not re.match(r'^\+?[0-9]{10,15}$', v):
+    #         raise HTTPException(
+    #             status_code=status.HTTP_400_BAD_REQUEST,
+    #             detail="Invalid phone number format"
+    #         )
+    #     return v
+    
+    # @validator('address')
+    # def validate_address(cls, v):
+    #     if len(v.strip()) < 5:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_400_BAD_REQUEST,
+    #             detail="Address must be at least 5 characters long"
+    #         )
+    #     return v
+
+
 class UserResponse(UserBase):
     id: int
-    class Config:
-        orm_mode = True
+    # class Config:
+    #     from_attributes = True

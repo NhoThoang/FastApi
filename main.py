@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import User
-from schemas import UserCreate, UserLogin, UserBase, UserResponse, InfoUser,update_information
+from schemas import UserCreate, UserLogin, UserBase, UserResponse, format_post_information, format_response_information,update_information_user
 from crud import (create_user, get_users, get_user_by_id, login_user, information_user,
                   update_infor_user)
 from database import get_db, engine, Base
@@ -66,21 +66,22 @@ async def shutdown():
 
 @app.post("/register/", response_model=UserCreate)
 async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
-    return await create_user(db=db, user=user)  # Gọi hàm tạo người dùng
+    return await create_user(db=db, user=user)
+  
 
-@app.post("/login/")
+@app.post("/login/", response_model=dict)
 async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
     print(user.username, user.password)
     username = await login_user(db, user)
     if username:
         access_token = create_access_token(data={"sub": username})
         return {"access_token": access_token, "token_type": "bearer"}
-@app.post("/information/")
-async def information(user: InfoUser, db: AsyncSession = Depends(get_db)):
+@app.post("/information/", response_model=format_response_information)
+async def information(user: format_post_information, db: AsyncSession = Depends(get_db)):
     username = await information_user(db, user.username)
     return username
 @app.post("/update_information/")
-async def update_information(user: update_information, db: AsyncSession = Depends(get_db)):
+async def update_information(user: update_information_user, db: AsyncSession = Depends(get_db)):
     username = await update_infor_user(db, user)
     return username
 
