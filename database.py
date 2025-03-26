@@ -24,19 +24,19 @@ AsyncSessionLocal = sessionmaker(
     # autocommit=True    # Không tạo transaction không cần thiết
 )
 Base = declarative_base()
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-
-# Hàm để lấy session
 # async def get_db():
 #     async with AsyncSessionLocal() as session:
-#         yield session
+#         try:
+#             yield session
+#             await session.commit()
+#         except Exception:
+#             await session.rollback()
+#             raise
+
+# Hàm để lấy session
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session
 
 
 # def get_db():
