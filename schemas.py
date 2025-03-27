@@ -71,12 +71,15 @@ class format_response_information(BaseModel):
     id: int
     phone: str
     address: str
-    avata_path: str
+    avatar_path: str
     background_path: str
 class update_information_user(BaseModel):
     username: str
     phone: str
     address: str
+    avatar_path: str
+    background_path: str
+
     
     # @validator('phone')
     # def validate_phone(cls, v):

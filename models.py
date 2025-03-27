@@ -39,7 +39,7 @@ class InforUser(Base):
     username = Column(String(255), unique=True, index=True, nullable=False)
     phone = Column(String(255))
     address = Column(String(255))
-    avata_path = Column(String(255), nullable=False, default="")
+    avatar_path = Column(String(255), nullable=False, default="")
     background_path = Column(String(255), nullable=False, default="")
 
     # def __repr__(self):

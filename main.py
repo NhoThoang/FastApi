@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import User
 from schemas import UserCreate, UserLogin, UserBase, UserResponse, format_post_information, format_response_information,update_information_user
 from crud import (create_user, get_users, get_user_by_id, login_user, information_user,
-                  update_infor_user)
+                  insert_update_infor_user)
 from database import get_db, engine, Base
 from passlib.context import CryptContext
 from fastapi.middleware.cors import CORSMiddleware
@@ -82,7 +82,7 @@ async def information(user: format_post_information, db: AsyncSession = Depends(
     return username
 @app.post("/update_information/")
 async def update_information(user: update_information_user, db: AsyncSession = Depends(get_db)):
-    username = await update_infor_user(db, user)
+    username = await insert_update_infor_user(db, user)
     return username
 
 @app.get("/users/", response_model=list[UserResponse])
