@@ -1,8 +1,12 @@
+version: '3.8'
+
 services:
   app:
     build: 
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
     ports:
       - "${APP_PORT}:${APP_PORT}"
     volumes:
@@ -16,7 +20,9 @@ services:
       - db
 
   db:
-    image: mysql:latest
+    image: mysql:8.0
+    env_file:
+      - .env
     environment:
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
       - MYSQL_DATABASE=${DB_NAME}
