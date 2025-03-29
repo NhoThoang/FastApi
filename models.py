@@ -31,8 +31,8 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)     # Đặt chiều dài cho `email`
     password = Column(String(255), nullable=False)  # Đặt chiều dài cho `password` nếu cần
 
-    # def __repr__(self):
-    #     return f"<User(id={self.id}, username={self.username}, email={self.email}, password={self.password})>"
+    def __repr__(self):
+        return f"<table tra ve(id={self.id}, username={self.username}, email={self.email}, password={self.password})>"
 class InforUser(Base):
     __tablename__ = 'infor_user'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -42,5 +42,5 @@ class InforUser(Base):
     avatar_path = Column(String(255), nullable=False, default="")
     background_path = Column(String(255), nullable=False, default="")
 
-    # def __repr__(self):
-    #     return f"<InforUser(id={self.id}, username={self.username}, avata_path={self.avata_path}, background_path={self.background_path}, address={self.address}, phone={self.phone})>"
+    def __repr__(self):
+        return f"<table tra ve(id={self.id}, username={self.username}, avata_path={self.avatar_path}, background_path={self.background_path}, address={self.address}, phone={self.phone})>"

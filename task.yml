@@ -1,0 +1,8 @@
+khi update upload avata thì sẽ ghi vào folder avata với tên của user và ghi path vào db ok và với backgroud cũng thế ghi vào folder background
+upload avata: ok
+upload background: fail
+get avata: fail
+get background: fail
+
+frontend: upload avata, upload background, get avata, get background
+file select, username 

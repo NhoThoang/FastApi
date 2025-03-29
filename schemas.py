@@ -2,9 +2,8 @@ from pydantic import BaseModel, EmailStr, validator
 from fastapi import HTTPException, status
 import re
 
-class UserBase(BaseModel):
+class Username(BaseModel):
     username: str
-    email: EmailStr  
 
     @validator('username')
     def username_min_length(cls, v):
@@ -15,7 +14,7 @@ class UserBase(BaseModel):
             )
         return v
 
-class UserCreate(UserBase):
+class Password(BaseModel):
     password: str
     # class Config:
     #     from_attributes = True
@@ -60,21 +59,29 @@ class UserCreate(UserBase):
             )
 
         return v
+    
+class UserCreate(Password, Username):
+    email: EmailStr 
 
-class UserLogin(BaseModel):
-    username: str
-    password: str
+class UserLogin(Password, Username):
+    pass
 
-class format_post_information(BaseModel):
-    username: str
-class format_response_information(BaseModel):
-    id: int
+class PhoneAddress(Username):
     phone: str
     address: str
+
+    
+class Avatar_path(Username):
+    avatar_path: str
+class Background_path(Username):
+    background_path: str
+
+class response_path_avatar_background(BaseModel):
     avatar_path: str
     background_path: str
-class update_information_user(BaseModel):
-    username: str
+
+
+class response_phone_address(BaseModel):
     phone: str
     address: str
     avatar_path: str
@@ -101,7 +108,7 @@ class update_information_user(BaseModel):
     #     return v
 
 
-class UserResponse(UserBase):
-    id: int
+# class UserResponse(UserBase):
+#     id: int
     # class Config:
     #     from_attributes = True
