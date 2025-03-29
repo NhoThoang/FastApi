@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
+import os
 
-DATABASE_URL = "mysql+asyncmy://thoang:km123456@localhost:3310/fastapi"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 

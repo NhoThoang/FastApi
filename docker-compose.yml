@@ -13,10 +13,10 @@ services:
     volumes:
       - .:/app
       - ./uploads_data:/app/uploads
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - APP_PORT=${APP_PORT}
-      - APP_HOST=${APP_HOST}
+    # environment:
+    #   - DATABASE_URL=${DATABASE_URL}
+    #   - APP_PORT=${APP_PORT}
+    #   - APP_HOST=${APP_HOST}
     depends_on:
       db:
         condition: service_healthy
