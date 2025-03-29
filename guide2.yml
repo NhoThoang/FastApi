@@ -1,0 +1,20 @@
+hông số	Default (MySQL)	Cấu hình tối ưu của bạn	Ảnh hưởng
+innodb_buffer_pool_size	~128MB	16G	Tăng đáng kể bộ nhớ cache dữ liệu, giảm I/O disk.
+innodb_buffer_pool_instances	1	8	Cải thiện hiệu suất khi nhiều thread truy cập.
+innodb_log_file_size	128MB	1G	Tăng dung lượng log để tránh ghi log quá thường xuyên.
+innodb_log_buffer_size	16MB	256M	Giảm số lần ghi log xuống disk, tối ưu cho giao dịch lớn.
+innodb_flush_log_at_trx_commit	1	1 (giữ nguyên)	Bảo đảm dữ liệu an toàn nhưng có thể chậm hơn so với 2.
+innodb_flush_method	fsync	O_DIRECT	Tránh cache của OS, tối ưu ghi trực tiếp vào disk.
+innodb_read_io_threads	4	8	Tăng số luồng đọc song song để xử lý query nhanh hơn.
+innodb_write_io_threads	4	8	Tăng luồng ghi, giảm bottleneck khi ghi dữ liệu.
+innodb_io_capacity	200	1000	Tăng giới hạn IOPS để tận dụng SSD hoặc RAID tốt hơn.
+query_cache_size	0 (đã deprecated)	0	Không ảnh hưởng vì MySQL 8.x không còn dùng query cache.
+tmp_table_size	16MB	512M	Giảm tạo bảng tạm trên disk khi SELECT dữ liệu lớn.
+max_heap_table_size	16MB	512M	Tăng bộ nhớ tối đa cho bảng HEAP (memory table).
+read_buffer_size	128KB	2M	Tăng tốc độ đọc tuần tự khi không có index.
+read_rnd_buffer_size	256KB	4M	Giúp đọc dữ liệu nhanh hơn khi có ORDER BY.
+join_buffer_size	256KB	8M	Tăng hiệu suất JOIN khi thiếu index.
+max_connections	151	500	Hỗ trợ nhiều kết nối đồng thời hơn.
+thread_cache_size	9	64	Giảm chi phí tạo thread mới, cải thiện hiệu suất.
+table_open_cache	2000	20000	Giảm tốn thời gian mở bảng khi có nhiều bảng.
+open_files_limit	5000	50000	Tăng giới hạn file mở, tránh lỗi "Too many open files".
