@@ -113,3 +113,14 @@ async def get_users():
 ### Tổng Kết
 FastAPI giúp tối ưu hiệu suất hệ thống web nhờ kiến trúc bất đồng bộ. Sử dụng connection pool giúp giảm tải MySQL, cải thiện tốc độ truy vấn và tăng khả năng mở rộng hệ thống.
 
+# Chạy chương trình 
+### clone project 
+```sh 
+git clone https://github.com/NhoThoang/FastApi.git
+cd FastApi
+```
+```sh
+docker compose up -d
+```
+Thử truy cập http://localhost/docs để xem các api Swagger
+
